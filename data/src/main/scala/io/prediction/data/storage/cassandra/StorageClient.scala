@@ -72,5 +72,5 @@ class StorageClient(val config: StorageClientConfig)
   )
 
   override
-  val prefix = "HB"
+  val prefix = "C"
 }
