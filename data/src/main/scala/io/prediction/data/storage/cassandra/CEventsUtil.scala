@@ -29,7 +29,7 @@ import org.json4s.{DefaultFormats, JObject}
 import org.json4s.native.Serialization.{read, write}
 
 /* common utility function for accessing EventsStore in HBase */
-object HBEventsUtil {
+object CEventsUtil {
 
   implicit val formats = DefaultFormats
 

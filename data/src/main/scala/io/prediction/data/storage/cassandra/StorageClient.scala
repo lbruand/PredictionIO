@@ -21,7 +21,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hbase.{HBaseConfiguration, MasterNotRunningException, ZooKeeperConnectionException}
 import org.apache.hadoop.hbase.client.{HBaseAdmin, HConnection, HConnectionManager}
 
-case class HBClient(
+case class CClient(
   val conf: Configuration,
   val connection: HConnection,
   val admin: HBaseAdmin
@@ -65,7 +65,7 @@ class StorageClient(val config: StorageClientConfig)
 
   val connection = HConnectionManager.createConnection(conf)
 
-  val client = HBClient(
+  val client = CClient(
     conf = conf,
     connection = connection,
     admin = new HBaseAdmin(connection)

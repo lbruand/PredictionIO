@@ -19,17 +19,17 @@ import io.prediction.data.storage.{Event, PEvents, StorageClientConfig}
 import org.apache.hadoop.hbase.HBaseConfiguration
 import org.apache.hadoop.hbase.client.Result
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
-import org.apache.hadoop.hbase.mapreduce.{TableInputFormat, TableOutputFormat}
+import org.apache.hadoop.hbase.mapreduce.{PIOHBaseUtil, TableInputFormat, TableOutputFormat}
 import org.apache.hadoop.io.Writable
 import org.apache.hadoop.mapreduce.OutputFormat
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.joda.time.DateTime
 
-class HBPEvents(client: HBClient, config: StorageClientConfig, namespace: String) extends PEvents {
+class CPEvents(client: CClient, config: StorageClientConfig, namespace: String) extends PEvents {
 
   def checkTableExists(appId: Int, channelId: Option[Int]): Unit = {
-    if (!client.admin.tableExists(HBEventsUtil.tableName(namespace, appId, channelId))) {
+    if (!client.admin.tableExists(CEventsUtil.tableName(namespace, appId, channelId))) {
       if (channelId.nonEmpty) {
         logger.error(s"The appId $appId with channelId $channelId does not exist." +
           s" Please use valid appId and channelId.")
@@ -59,9 +59,9 @@ class HBPEvents(client: HBClient, config: StorageClientConfig, namespace: String
 
     val conf = HBaseConfiguration.create()
     conf.set(TableInputFormat.INPUT_TABLE,
-      HBEventsUtil.tableName(namespace, appId, channelId))
+      CEventsUtil.tableName(namespace, appId, channelId))
 
-    val scan = HBEventsUtil.createScan(
+    val scan = CEventsUtil.createScan(
         startTime = startTime,
         untilTime = untilTime,
         entityType = entityType,
@@ -79,7 +79,7 @@ class HBPEvents(client: HBClient, config: StorageClientConfig, namespace: String
     val rdd = sc.newAPIHadoopRDD(conf, classOf[TableInputFormat],
       classOf[ImmutableBytesWritable],
       classOf[Result]).map {
-        case (key, row) => HBEventsUtil.resultToEvent(row, appId)
+        case (key, row) => CEventsUtil.resultToEvent(row, appId)
       }
 
     rdd
@@ -93,13 +93,13 @@ class HBPEvents(client: HBClient, config: StorageClientConfig, namespace: String
 
     val conf = HBaseConfiguration.create()
     conf.set(TableOutputFormat.OUTPUT_TABLE,
-      HBEventsUtil.tableName(namespace, appId, channelId))
+      CEventsUtil.tableName(namespace, appId, channelId))
     conf.setClass("mapreduce.outputformat.class",
       classOf[TableOutputFormat[Object]],
       classOf[OutputFormat[Object, Writable]])
 
     events.map { event =>
-      val (put, rowKey) = HBEventsUtil.eventToPut(event, appId)
+      val (put, rowKey) = CEventsUtil.eventToPut(event, appId)
       (new ImmutableBytesWritable(rowKey.toBytes), put)
     }.saveAsNewAPIHadoopDataset(conf)
 

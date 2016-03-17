@@ -25,16 +25,16 @@ import org.joda.time.DateTime
 import scala.collection.JavaConversions._
 import scala.concurrent.{ExecutionContext, Future}
 
-class HBLEvents(val client: HBClient, config: StorageClientConfig, val namespace: String)
+class CLEvents(val client: CClient, config: StorageClientConfig, val namespace: String)
   extends LEvents with Logging {
 
   // implicit val formats = DefaultFormats + new EventJson4sSupport.DBSerializer
 
   def resultToEvent(result: Result, appId: Int): Event =
-    HBEventsUtil.resultToEvent(result, appId)
+    CEventsUtil.resultToEvent(result, appId)
 
   def getTable(appId: Int, channelId: Option[Int] = None): HTableInterface =
-    client.connection.getTable(HBEventsUtil.tableName(namespace, appId, channelId))
+    client.connection.getTable(CEventsUtil.tableName(namespace, appId, channelId))
 
   override
   def init(appId: Int, channelId: Option[Int] = None): Boolean = {
@@ -47,7 +47,7 @@ class HBLEvents(val client: HBClient, config: StorageClientConfig, val namespace
       client.admin.createNamespace(nameDesc)
     }
 
-    val tableName = TableName.valueOf(HBEventsUtil.tableName(namespace, appId, channelId))
+    val tableName = TableName.valueOf(CEventsUtil.tableName(namespace, appId, channelId))
     if (!client.admin.tableExists(tableName)) {
       info(s"The table ${tableName.getNameAsString()} doesn't exist yet." +
         " Creating now...")
@@ -61,7 +61,7 @@ class HBLEvents(val client: HBClient, config: StorageClientConfig, val namespace
 
   override
   def remove(appId: Int, channelId: Option[Int] = None): Boolean = {
-    val tableName = TableName.valueOf(HBEventsUtil.tableName(namespace, appId, channelId))
+    val tableName = TableName.valueOf(CEventsUtil.tableName(namespace, appId, channelId))
     try {
       if (client.admin.tableExists(tableName)) {
         info(s"Removing table ${tableName.getNameAsString()}...")
@@ -92,7 +92,7 @@ class HBLEvents(val client: HBClient, config: StorageClientConfig, val namespace
     Future[String] = {
     Future {
       val table = getTable(appId, channelId)
-      val (put, rowKey) = HBEventsUtil.eventToPut(event, appId)
+      val (put, rowKey) = CEventsUtil.eventToPut(event, appId)
       table.put(put)
       table.flushCommits()
       table.close()
@@ -156,7 +156,7 @@ class HBLEvents(val client: HBClient, config: StorageClientConfig, val namespace
 
         val table = getTable(appId, channelId)
 
-        val scan = HBEventsUtil.createScan(
+        val scan = CEventsUtil.createScan(
           startTime = startTime,
           untilTime = untilTime,
           entityType = entityType,
